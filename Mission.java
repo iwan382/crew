@@ -27,13 +27,14 @@ public class Mission {
         playerNum = n;
     }
     
-    public void setPlayerum(int n)
+    public void setPlayerNum(int n)
     {
         playerNum = n;
     }
     
     public boolean MissionSuccess(Player[] players)
     {
+        //System.out.println(this);
         Card[][] winnings = players[playerNum].getWinPile();
         switch(order)
         {
@@ -96,6 +97,16 @@ public class Mission {
         return false;
     }
     
+    public Card getMissionCard()
+    {
+        return missionCard;
+    }
+    
+    public MissionOrder getOrder()
+    {
+        return order;
+    }
+    
     public int getPlayerNum()
     {
         return playerNum;
@@ -112,8 +123,27 @@ public class Mission {
     {
         String s = "Win " + missionCard;
         
-        
-        
         return s;
     }
+    
+    @Override
+    public boolean equals(Object o)
+    {
+        if(o != null)
+        {
+            if(o.getClass() == Mission.class)
+            {
+                return ((Mission) o).getMissionCard().equals(missionCard) && ((Mission) o).getOrder() == order;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else
+        {
+            return false;
+        }
+    }
+    
 }

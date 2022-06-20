@@ -24,6 +24,29 @@ public class IOInterface
         
     }
     
+    public boolean manyGames()
+    {
+        System.out.println("Please indicate whether you want to run one game, or run a lot of games.\n Write true for many games, false for one game.");
+        while(true)
+        {
+            if(scan.hasNextBoolean())
+            {
+                return scan.nextBoolean();
+            }
+        }
+    }
+    
+    public int howManyGames()
+    {
+        System.out.println("Please indicate the number of games you want to run.");
+        while(true)
+        {
+            if(scan.hasNextInt())
+            {
+                return scan.nextInt();
+            }
+        }
+    }
     
     public void cardPlayed(int player, Card card)
     {
@@ -55,7 +78,10 @@ public class IOInterface
     public Strategy selectStrategy(int p)
     {
         System.out.println("Please indicate which strategy player " + (p+1) + " should employ");
-        System.out.println("The choices are: R, for random; P, for player controlled; SSC, for a small amount of simulations (with universal knowledge);");
+        System.out.println("The choices are: R, for random; P, for player controlled; SSC, for simple simulations (with universal knowledge)"
+                + "; SSH for simple simulations (with information fog);\n CSH for simulations where a bit of competense is assumed (with infor"
+                + "mation fog); SMH for simulations where significantly more competence is assumed (with information fog);\n BSH for a lot more" 
+                + "simulations where a bit of competense is assumed (with information fog)");
         while(true)
         {
             if(scan.hasNext())
@@ -67,6 +93,14 @@ public class IOInterface
                     case "P": return Strategy.PLAYER;
                     
                     case "SSC": return Strategy.SIMPLESIMCHEAT;
+                    
+                    case "SSH": return Strategy.SIMPLESIMHONEST;
+                    
+                    case "CSH": return Strategy.COMPETENTSIMHONEST;
+                    
+                    case "SMH": return Strategy.SMARTSIMHONEST;
+                    
+                    case "BSH": return Strategy.BULKSIMHONEST;
                     
                     default: System.out.println("The input is not recognised");
                 }
@@ -124,12 +158,19 @@ public class IOInterface
                 int i = scan.nextInt();
                 return missions.remove(i-1);
             }
+            else
+            {
+                if(scan.hasNext())
+                {
+                    scan.next();
+                }
+            }
         }
     }
     
     public Communication selectCommunication(LinkedList<Communication> communication, LinkedList<Card> hand) 
     {
-        System.out.println("Please indicate if you want to communicate: ");
+        System.out.println("Please indicate if you want to communicate (true of false): ");
         if(!scan.nextBoolean())
         {
             return null;

@@ -20,13 +20,15 @@ public class GameController {
     private Card[][] startingHands;
     private Player[] players;
     private Random r = new Random();
-    private int round;
+    private int round = 0;
     private Player leadPlayer;
     private int player;
     private IOInterface ioManager = new IOInterface();
     private boolean trickPhase = false;
     private boolean feedback = true;
     private History history = new History();
+    private LinkedList<Card> preSelectedMoves = new LinkedList();
+    private LinkedList<Mission> preSelectedMissions = new LinkedList();
     
     private Strategy[] strats;
     private int mNum;
@@ -34,7 +36,11 @@ public class GameController {
     public GameController(int nPlayers, Player[] newPlayers, int round, Player lead, int player, boolean b, LinkedList<Mission> overview, History h)
     {
         players = newPlayers;
-        history = new History(h.getCardsPlayed(), h.getPlayerActing());
+        for(Player p: players)
+        {
+            p.setGame(this);
+        }
+        history = new History(h.getCardsPlayed(), h.getPlayerActing(), h.getMissionsChosen(), h.getPlayerChoosing());
         /*
         System.out.println("The first player is: " + players[0]);
         for(int i = 0; i < nPlayers; i++)
@@ -82,7 +88,7 @@ public class GameController {
             startingHands[i%nPlayers][i/nPlayers] = deck.remove(r.nextInt(40-i));
         }
         
-        /* information
+        /*information
         for(int i = 0; i < nPlayers; i++)
         {
             System.out.print("Player: " + (i+1) + " has in his hand\n");
@@ -93,7 +99,7 @@ public class GameController {
         }
         */
         
-        
+        history.setStartingHands(startingHands);
         //create a list of the players
         players = new Player[nPlayers];
         Strategy strat;
@@ -126,7 +132,12 @@ public class GameController {
         
     }
     
-    public double calculateSuccesRate(int m)
+    /*
+    Used to run a game, it then returns a 1 if the game was won, a 0 if the game was lost.
+    No output will be given during the time the game runs.
+    
+    */
+    public double calculateSucces(int m)
     {
         mNum = m;
         feedback = false;
@@ -139,6 +150,40 @@ public class GameController {
         return 0.00;
     }
     
+    
+    /*
+    Simulate part of a game with the given strategy, which should make use of the preselected moves.
+    It returns true when the preselected moves were able to be played, otherwise it returns false.
+    
+    */
+    public boolean historyCheck(Strategy[] s)   
+    {
+        History h = simulateGameStart(preSelectedMoves.size()/players.length-1, s);
+        if(h.getMissionsChosen().contains(new Mission(new Card(Color.BLACK, 9), MissionOrder.NONE)))
+        {
+            return false;
+        }
+        //h = simulateGame(preSelectedMoves.size()/players.length-1, s);
+        return !h.getCardsPlayed().contains(new Card(Color.BLACK, 9));
+    }
+    
+    /*
+    Simulate a game including the deviding the missions, then return a History object containing the relevant information about it.
+    
+    */
+    public History simulateGameStart(int maxRounds, Strategy[] strats)
+    {
+        reassignStrategy(strats);
+        simulateDevideNormally(missionOverview, strats);
+        gameStart(maxRounds);
+        results();
+        return history;
+    }
+    
+    /*
+    Ensure that the missions associated with the wanted mission are divided properly
+    
+    */
     public void gameSetUp()
     {
         //ask which mission
@@ -168,7 +213,9 @@ public class GameController {
         assignMissions(mission, deck);
         
         
+        
         player = leadPlayer.getPlayNum();
+        //System.out.println("The lead player is: )" + player);
         /*                    //debug info
         double[][][] info = players[0].getGameInfo();
         
@@ -192,6 +239,27 @@ public class GameController {
         
     }
     
+    /*
+    Make player pNum add the mission mission.
+    Then update which player has to take their turn.
+    
+    */
+    public void chooseMission(int pNum, Mission mission)
+    {
+        players[pNum].forceChooseMission(mission);
+        //System.out.println("Assign the mission " + mission.toString() + " to player " + (pNum+1));
+        missionOverview.get(missionOverview.indexOf(mission)).setPlayerNum(pNum);
+        //System.out.println("Now the mission is assigned to player " + (mission.getPlayerNum()+1));
+        history.missionUpdate(mission, player);
+        player++;
+        player %= players.length;
+    }
+    
+    /*
+    Make player pNum play card card.
+    Then update which player has to take their turn.
+    
+    */
     public void makeMove(int pNum, Card card)
     {
         players[pNum].forcePlayCard(card);
@@ -200,17 +268,32 @@ public class GameController {
         player %= players.length;
     }
     
+    /*
+    Simulate a game, then return a History object containing the relevant information about it.
+    
+    */
     public History simulateGame(int maxRounds, Strategy[] strats)
     {
         boolean gameFinished = false;
         //player++;
         //player %= players.length;
+        //System.out.println("The current player is" + + "" +);
         reassignStrategy(strats);
         if(trickPhase)
         {
-            trick();
+            //System.out.println("The lead player is: " + leadPlayer.getPlayNum());
+            //System.out.println("The current player is: " + player);
+            //System.out.println("We start a trick phase");
+            int check = trick();
+            //System.out.println("We end a trick phase");
+            if(check == 1)
+            {
+                return history;
+            }
             round++;
-            gameFinished = communication();
+            //System.out.println("We start a communication phase");
+            gameFinished = communication(maxRounds);
+            //System.out.println("We finish a communication phase");
             boolean won = true, lost = false;
             for(Mission m: missionOverview)
             {
@@ -223,20 +306,31 @@ public class GameController {
         
         if(!gameFinished)
         {
-            gameStart(maxRounds-1);
+            //System.out.println("start the remainder of the game");
+            gameStart(maxRounds);
+            //System.out.println("finished the remainder of the game");
         }
+        //System.out.println("Calculate the results");
         results();
+        //System.out.println("Finished calculating the results");
         return history;
     }
     
+    /*
+        Start with performing a communication phase then loop a trick phase followed by a communication phase
+        until either the communication phase function signals that the game has come to an end,
+        or you determine that the result of the game is already known
+        (if (at least) one mission cannot be completed anymore, or all missions already have been completed)
+    */
     public void gameStart(int maxRounds)
     {
         if(feedback)
         {
             ioManager.commPhase();
         }
-        
-        boolean gameFinished = communication();
+        //System.out.println("We start a communication phase");
+        boolean gameFinished = communication(maxRounds);
+        //System.out.println("We finish a communication phase");
         if(feedback)
         {
             ioManager.trickPhase();
@@ -247,9 +341,12 @@ public class GameController {
             round++;
             if(feedback)
             {
+                System.out.println("The currect round is " + round);
                 ioManager.commPhase();
             }
-            gameFinished = communication();
+            //System.out.println("We start a communication phase");
+            gameFinished = communication(maxRounds);
+            //System.out.println("We finish a communication phase");
             boolean won = true, lost = false;
             for(Mission m: missionOverview)
             {
@@ -261,8 +358,10 @@ public class GameController {
         }
     }
 
-    
-    
+    /*
+        Return true if and only if all of the missions have been completed succesfully.
+        
+    */
     public boolean results()
     {
         boolean gameWon = true;
@@ -318,8 +417,23 @@ public class GameController {
         return gameWon;
     }
     
-    private boolean communication() 
+    /*
+        Changes the game state to a communication state,
+        then proceed to ask all players, starting with the lead, to communicate.
+        continue to do this until all players have refused (in a row).
+        Then return true if and only if the last player in the array (who will always have the smallest hand)
+        has run out of cards.
+    */
+    private boolean communication(int maxRounds) 
     {
+        if(players[players.length-1].handEmpty())
+        {
+            return true;
+        }
+        if(round > maxRounds)
+        {
+           return true; 
+        }
         trickPhase = false;
         int[] commChance = new int[players.length];
         for(int i = 0; i < players.length; i++)
@@ -332,6 +446,7 @@ public class GameController {
         {
             n = 0;
             commChance[player] = players[player].makeCommDecision(leadPlayer.getPlayNum(), players);
+            
             for(int i: commChance)
             {
                 n+=i;
@@ -347,6 +462,7 @@ public class GameController {
             
             if(commChance[player] == 1)
             {
+                history.communicationMade(players[player].getComm(), round, player);
                 for(Player p: players)
                 {
                     if(p.getPlayNum() != player)
@@ -367,10 +483,18 @@ public class GameController {
         return players[players.length-1].handEmpty();
     }
 
-    private void trick() 
+    /*
+        Changes the game state to a trick state,
+        then proceed to ask all players, starting with the lead, to communicate.
+        continue to do this until all players have refused (in a row).
+        Then return true if and only if the last player in the array (who will always have the smallest hand)
+        has run out of cards.
+    */
+    private int trick() 
     {
         trickPhase = true;
         Card[] cardsPlayed = new Card[players.length];
+        //System.out.println("(");
         for(int i = 0; i < players.length; i++)
         {
             if(players[i].getCardPlayed() != null)
@@ -380,12 +504,20 @@ public class GameController {
                 {
                     p.updateInfoCard(players[i], cardsPlayed[i]);
                 }
+                //System.out.println("there will be a mismatch");
             }
         }
+        //debug info
+        //System.out.println("The lead player is: " + leadPlayer.getPlayNum());
+        //System.out.println("The current player is: " + player);
         while(!cardsPlayed())
         {
             cardsPlayed[player] = players[player].playCard(leadPlayer.getPlayNum(), players);
             history.update(cardsPlayed[player], player);
+            if(cardsPlayed[player].equals(new Card(Color.BLACK, 9)))
+            {
+                return 1;
+            }
             if(feedback)
             {
                 ioManager.cardPlayed(player, cardsPlayed[player]);
@@ -398,8 +530,9 @@ public class GameController {
             player++;
             player %= players.length;
             //System.out.println("player " + (i+1) + " now plays a card"); //debug info
+            //System.out.println("there was no card uncovered");
         }
-        
+        //System.out.println(")");
         
         //Determine the winner of this trick
         int i = leadPlayer.getPlayNum();
@@ -437,6 +570,8 @@ public class GameController {
         {
             p.removeCardPlayed();
         }
+        
+        return 0;
     }
     
     public boolean cardsPlayed()
@@ -450,6 +585,175 @@ public class GameController {
         }
         return true;
         
+    }
+    
+    public boolean quickFail(Card move, int playerNumber) 
+    {
+        LinkedList<Card> cardsOnTheTable = new LinkedList();
+        for(Player p: players)
+        {
+            if(p.getCardPlayed() != null)
+            {
+                cardsOnTheTable.add(p.getCardPlayed());
+            }
+        }
+        
+        if(playerNumber == leadPlayer.getPlayNum())
+        {
+            
+        }
+        else if(leadPlayer.getCardPlayed() == null)
+        {
+            return false;
+        }
+        else
+        {
+            Color leadColor = leadPlayer.getCardPlayed().getSuit();
+            for(Card c: cardsOnTheTable)
+            {
+                if(isInAMission(c))
+                {
+                    if(playerHasMission(c, players[playerNumber]))
+                    {
+                        return !winningCard(leadColor, move);
+                    }
+                    else
+                    {
+                        return winningCard(leadColor, move);
+                    }
+                }
+            }
+            
+            for(Player p: players)
+            {
+                if(playerHasMission(move, p))
+                {
+                    if(p.getCardPlayed() != null)
+                    {
+                        players[playerNumber].setCardPlayed(move);
+                        boolean wins = winningCard(leadColor, p.getCardPlayed());
+                        players[playerNumber].removeCardPlayed();
+                        return !wins;
+                    }
+                    else
+                    {
+                        Card strongest = move;
+                        for(Card c: cardsOnTheTable)
+                        {
+                            if(c.getValue() > move.getValue() && (c.getSuit() == Color.BLACK || c.getSuit() == leadColor))
+                            {
+                                if((c.getSuit() == Color.BLACK && strongest.getSuit() != Color.BLACK) || (c.getSuit() == leadColor && strongest.getSuit() != leadColor && strongest.getSuit() != Color.BLACK))
+                                {
+                                    strongest = c;
+                                }
+                            }
+                        }
+                        return !couldWin(strongest, leadColor);
+                    }
+                }
+            }
+
+        }
+        
+        
+        return false;
+    }
+    
+    /*
+    Returns a boolean that answers the question "Can card c still be won?"
+    
+    */
+    public boolean couldWin(Card c, Color leadColor)
+    {
+        int cardPosibilities = 13;
+        if(leadColor == Color.BLACK)
+        {
+            cardPosibilities = 4;
+        }
+        LinkedList<Card> strongerCards = new LinkedList<Card>();
+        Color[] colors = {leadColor, Color.BLACK};
+        for(int i = 0; i < cardPosibilities; i++)
+        {
+            strongerCards.add(new Card(colors[i/9],(i%9)+1));
+        }
+        
+        LinkedList<Card> tooWeak = new LinkedList();
+        for(Card card: strongerCards)
+        {
+            if(card.getValue() <= c.getValue() && card.getSuit() != Color.BLACK)
+            {
+                tooWeak.add(card);
+            }
+        }
+        strongerCards.removeAll(tooWeak);
+        strongerCards.removeAll(history.getCardsPlayed());
+        
+        return !strongerCards.isEmpty();
+    }
+    
+    public boolean winningCard(Color leadingColor, Card card)
+    {
+        Card winningCard;
+        if(card.getSuit() == leadingColor || card.getSuit() == Color.BLACK)
+        {
+            winningCard = card;
+        }
+        else
+        {
+            return false;
+        }
+        
+        LinkedList<Card> cardsPlayed = new LinkedList();
+        for(Player p: players)
+        {
+            if(p.getCardPlayed() != null)
+            {
+                cardsPlayed.add(p.getCardPlayed());
+            }
+        }
+        
+        for(Card c: cardsPlayed)//y9,y3,y5
+        {
+            if(c.getSuit() == Color.BLACK)
+            {
+                if(c.getValue() > winningCard.getValue() || winningCard.getSuit() != Color.BLACK)
+                {
+                    return false;
+                }
+            }
+            else if(c.getSuit() == leadingColor)
+            {
+                if(c.getValue() > winningCard.getValue() && winningCard.getSuit() != Color.BLACK)
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+    public boolean isInAMission(Card c)
+    {
+        for(Player p: players)
+        {
+            if(playerHasMission(c,p))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    public boolean playerHasMission(Card c, Player p)
+    {
+        for(Mission m: p.getPersonalMissions())
+        {
+            if(m.getMissionCard().equals(c))
+            {
+                return true;
+            }
+        }
+        return false;
     }
     
     public void assignMissions(int mission, LinkedList<Card> missionCards)
@@ -494,7 +798,7 @@ public class GameController {
         LinkedList<Mission> missions = new LinkedList<>();
         for(int i = 0; i < n; i++)
         {
-            missions.add(new Mission(deck.remove(r.nextInt(36-i)), MissionOrder.values()[conditions[i]])); //untested
+            missions.add(new Mission(deck.remove(r.nextInt(36-i)), MissionOrder.values()[conditions[i]]));
         }
         return missions;
     }
@@ -506,6 +810,24 @@ public class GameController {
         while(!missions.isEmpty())
         {
             missions = players[player].chooseMission(missions, ioManager, players);
+            player++;
+            player = player % players.length;
+        }
+    }
+    
+    public void simulateDevideNormally(LinkedList<Mission> missions, Strategy[] strats)
+    {
+        LinkedList<Mission> copyMissions = new LinkedList();
+        
+        for(Mission m: missions)
+        {
+            copyMissions.add(missionOverview.get(missionOverview.indexOf(m)));
+        }        
+        this.reassignStrategy(strats);
+        while(!missions.isEmpty())
+        {
+            //System.out.println("The previous number should not be 0");
+            missions = players[player].chooseMission(copyMissions, ioManager, players);
             player++;
             player = player % players.length;
         }
@@ -531,12 +853,84 @@ public class GameController {
             missionCopy.add(missionOverview.get(i).cloneMission());
         }
         
+        
         return new GameController(players.length, newPlayers, round, leadPlayer, player, trickPhase, missionCopy, history);
+    }
+    
+    public Mission getNextMission()
+    {
+        if(preSelectedMissions.isEmpty())
+        {
+            return new Mission(new Card(Color.BLACK, 7), MissionOrder.NONE);
+        }
+        else
+        {
+            return preSelectedMissions.remove();
+        }
+    }
+    
+    public Card getNextMove()
+    {
+        if(preSelectedMoves.isEmpty())
+        {
+            return new Card(Color.BLACK, 7);
+        }
+        else
+        {
+            return preSelectedMoves.remove();
+        }
+    }
+    
+    public LinkedList<Mission> getMissionOverview()
+    {
+        return missionOverview;
+    }
+    
+    public int getPlayer()
+    {
+        return player;
     }
     
     public History getHistory()
     {
         return history;
+    }
+    
+    public void setGame(GameController g)
+    {
+        for(Player p: players)
+        {
+            p.setGame(g);
+        }
+    }
+    
+    public void setLeadPlayer()
+    {
+        for(Player p: players)
+        {
+            if(p.isCaptain())
+            {
+                leadPlayer = p;
+            }
+        }
+    }
+    
+    public void setPreSelectedMissions(LinkedList<Mission> missions)
+    {
+        this.preSelectedMissions = missions;
+    }
+    
+    public void setPreSelectedMoves(LinkedList<Card> moves)
+    {
+        this.preSelectedMoves = moves;
+    }
+    
+    public void setHands(LinkedList<LinkedList<Card>> hands)
+    {
+        for(int i = 0; i < players.length; i++)
+        {
+            players[i].setHand(hands.get(i));
+        }
     }
     
     public void reassignStrategy(Strategy[] newStrats)
@@ -545,10 +939,5 @@ public class GameController {
         {
             players[i].setStrategy(newStrats[i]);
         }
-    }
-    
-    public void cleanUp()
-    {
-        
     }
 }

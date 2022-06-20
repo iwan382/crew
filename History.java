@@ -6,7 +6,6 @@
 package thecrew;
 
 import java.util.LinkedList;
-
 /**
  *
  * @author Iwan382
@@ -16,6 +15,14 @@ public class History {
     LinkedList<Card> cardsPlayed = new LinkedList<Card>();
     LinkedList<Integer> playerActing = new LinkedList<Integer>();
     boolean success, finished = false;
+    LinkedList<Mission> missionsChosen = new LinkedList<Mission>();
+    LinkedList<Integer> playerChoosing = new LinkedList<Integer>();
+    Card[][] startingHands;
+    LinkedList<LinkedList<Mission>> missionDevision = new LinkedList<LinkedList<Mission>>();
+    LinkedList<Communication> communicationsMade = new LinkedList<Communication>();
+    LinkedList<Integer> roundCommunicated = new LinkedList<Integer>();
+    LinkedList<Integer> playerCommunicating = new LinkedList<Integer>();
+    long timeTaken;
     
     public History()
     {
@@ -31,10 +38,38 @@ public class History {
         }
     }
     
+    public History(LinkedList<Card> cP, LinkedList<Integer> pA, LinkedList<Mission> mC, LinkedList<Integer> pC)
+    {
+        for(int i = 0; i < cP.size(); i++)
+        {
+            cardsPlayed.add(cP.get(i));
+            playerActing.add(pA.get(i));
+        }
+        
+        for(int i = 0; i < mC.size(); i++)
+        {
+            missionsChosen.add(mC.get(i));
+            playerChoosing.add(pC.get(i));
+        }
+    }
+    
+    public void communicationMade(Communication comm, int round, int player)
+    {
+        communicationsMade.add(comm);
+        roundCommunicated.add(round);
+        playerCommunicating.add(player);
+    }
+    
     public void update(Card c, int player)
     {
         cardsPlayed.add(c);
         playerActing.add(player);
+    }
+    
+    public void missionUpdate(Mission m, int player)
+    {
+        missionsChosen.add(m);
+        playerChoosing.add(player);
     }
     
     public LinkedList<Card> getCardsPlayed()
@@ -47,6 +82,31 @@ public class History {
         return playerActing;
     }
     
+    public LinkedList<Mission> getMissionsChosen()
+    {
+        return missionsChosen;
+    }
+    
+    public LinkedList<Integer> getPlayerChoosing()
+    {
+        return playerChoosing;
+    }
+    
+    public LinkedList<Integer> getPlayerCommunicated()
+    {
+        return playerCommunicating;
+    }
+    
+    public LinkedList<Integer> getRoundCommunicated()
+    {
+        return roundCommunicated;
+    }
+    
+    public LinkedList<Communication> getCommunicationsMade()
+    {
+        return communicationsMade;
+    }
+    
     public boolean getSuccess()
     {
         return success;
@@ -55,6 +115,33 @@ public class History {
     public boolean getFinished()
     {
         return finished;
+    }
+    
+    public Card[][] getStartingHands()
+    {
+        return startingHands;
+    }
+    
+    public long getTimeTaken()
+    {
+        return timeTaken;
+    }
+    
+    public void setTimeTaken(long timeTaken)
+    {
+        this.timeTaken = timeTaken;
+    }
+    
+    public void setStartingHands(Card[][] startingHands)
+    {
+        this.startingHands = new Card[startingHands.length][startingHands[0].length];
+        for(int i = 0; i < startingHands.length; i++)
+        {
+            for(int j = 0; j < startingHands[i].length; j++)
+            {
+                this.startingHands[i][j] = startingHands[i][j];
+            }
+        }
     }
     
     public void setFinished(boolean b)
@@ -70,6 +157,13 @@ public class History {
     public String toString()
     {
         String s = "History overview: \n";
+        
+        for(int i = 0; i < missionsChosen.size(); i++)
+        {
+            s += "Player " + (playerChoosing.get(i)+1) + " chose mission " + missionsChosen.get(i) + "\n";
+        }
+        
+        s += "-------------------------------------- \n";
         
         for(int i = 0; i < cardsPlayed.size(); i++)
         {
