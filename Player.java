@@ -15,7 +15,7 @@ import java.util.Random;
 public class Player {
     
     private LinkedList<Card> hand = new LinkedList();
-    private LinkedList<Mission> personalMissions = new LinkedList();
+    private LinkedList<Task> personalTasks = new LinkedList();
     private LinkedList<History> simulationStorage = new LinkedList();
     private double[][][] cardInfo;  //player, color, number
     private Card[][] winPile;
@@ -32,16 +32,16 @@ public class Player {
                                      //1 communicates that a decision was made to communicate,
                                      //2 communicates that a decision was made to not communicate.
     
-    public Player(LinkedList<Card> h, int players, int pn, Controller c, Communication comm, Card played, double[][][] info, GameController contr, Card[][] winnings, boolean hasComm, LinkedList<Mission> pMissions)
+    public Player(LinkedList<Card> h, int players, int pn, Controller c, Communication comm, Card played, double[][][] info, GameController contr, Card[][] winnings, boolean hasComm, LinkedList<Task> pTasks)
     {
         for(Card card: h)
         {
             hand.add(card);
         }
-        personalMissions = new LinkedList();
-        for(Mission m: pMissions)
+        personalTasks = new LinkedList();
+        for(Task m: pTasks)
         {
-            personalMissions.add(m);
+            personalTasks.add(m);
         }
         
         cardPlayed = played;
@@ -164,12 +164,12 @@ public class Player {
     
     public boolean lastPredictionEqual(History general, History simulated, int moveNumber)
     {
-        for(int j = 0; j < general.getMissionsChosen().size(); j++)
+        for(int j = 0; j < general.getTasksChosen().size(); j++)
         {
-            Mission mission1 = general.getMissionsChosen().get(j);
-            Mission mission2 = simulated.getMissionsChosen().get(j);
+            Task task1 = general.getTasksChosen().get(j);
+            Task task2 = simulated.getTasksChosen().get(j);
 
-            if(!mission1.equals(mission2) || mission1.getPlayerNum() != mission2.getPlayerNum())
+            if(!task1.equals(task2) || task1.getPlayerNum() != task2.getPlayerNum())
             {
                 return false;
             }
@@ -203,14 +203,14 @@ public class Player {
         
     }
     
-    public Mission simulateGameSetUp(GameController contr, LinkedList<Mission> missions, int simulations, Strategy[] strats, boolean honest)
+    public Task simulateGameSetUp(GameController contr, LinkedList<Task> tasks, int simulations, Strategy[] strats, boolean honest)
     {
-        assert(missions.size() != 0);
+        assert(tasks.size() != 0);
         GameController game;
         int moveNumber = contr.getHistory().getPlayerActing().size();
-        double[] successes = new double[missions.size()];
-        int[] attempts = new int[missions.size()];
-        int[] timesWon = new int[missions.size()];
+        double[] successes = new double[tasks.size()];
+        int[] attempts = new int[tasks.size()];
+        int[] timesWon = new int[tasks.size()];
         for(int i = 0; i < simulations; i++)
         {
             game = contr.cloneGameController();
@@ -223,13 +223,13 @@ public class Player {
 
             }
             //System.out.println("This should be equal, to this");
-            //System.out.println(missions.size());
-            Mission chosen = missions.remove(i % missions.size());
-            game.chooseMission(playNum, chosen);
-            game.simulateDevideNormally(missions, strats);
-            missions.add(i % (missions.size()+1), chosen);
-            //System.out.println(missions.size());
-            //for(Mission m : game.getMissionOverview())
+            //System.out.println(tasks.size());
+            Task chosen = tasks.remove(i % tasks.size());
+            game.chooseTask(playNum, chosen);
+            game.simulateDevideNormally(tasks, strats);
+            tasks.add(i % (tasks.size()+1), chosen);
+            //System.out.println(tasks.size());
+            //for(Task m : game.getTaskOverview())
             //{
             //    System.out.println((m.getPlayerNum()+1));
             //}
@@ -254,17 +254,17 @@ public class Player {
         
         
         
-        int missionsChosen = contr.getMissionOverview().size() - missions.size();
-        //System.out.println(missions.size());
+        int tasksChosen = contr.getTaskOverview().size() - tasks.size();
+        //System.out.println(tasks.size());
         for(History h: simulationStorage)
         {
-            int i = missions.indexOf(h.getMissionsChosen().get(missionsChosen));
+            int i = tasks.indexOf(h.getTasksChosen().get(tasksChosen));
             if(i == -1)
             {
-                System.out.println("Something went wrong this mission:");
-                System.out.println(h.getMissionsChosen().get(missionsChosen));
+                System.out.println("Something went wrong this task:");
+                System.out.println(h.getTasksChosen().get(tasksChosen));
                 System.out.println("is not present here:");
-                for(Mission m: missions)
+                for(Task m: tasks)
                 {
                     System.out.println(m);
                 }
@@ -287,14 +287,14 @@ public class Player {
         
         if(feedback)
         {
-            for(int i = 0; i < missions.size(); i++)
+            for(int i = 0; i < tasks.size(); i++)
             {
-                System.out.println("Choosing mission " + missions.get(i) + " won an estimated " + successes[i]*100 + "% of the times");
+                System.out.println("Choosing task " + tasks.get(i) + " won an estimated " + successes[i]*100 + "% of the times");
             } 
         }
         
         double highest = successes[0];
-        for(int i = 0; i < missions.size(); i++)
+        for(int i = 0; i < tasks.size(); i++)
         {
             if(successes[i] > highest)
             {
@@ -303,7 +303,7 @@ public class Player {
             }
         }
         
-        return missions.get(highestPosition);
+        return tasks.get(highestPosition);
     }
     
     public Card simulateGame(GameController contr, LinkedList<Card> moves, int simulations, Strategy[] strats, boolean honest)
@@ -360,7 +360,7 @@ public class Player {
                 }
                 
                 game.setPreSelectedMoves(game.getHistory().getCardsPlayed());
-                game.setPreSelectedMissions(game.getHistory().getMissionsChosen());
+                game.setPreSelectedTasks(game.getHistory().getTasksChosen());
                 
                 //System.out.println("Start a history check");
                 //System.out.println("Check the history, player " + game.getPlayer() + " will make the first move");
@@ -829,12 +829,12 @@ public class Player {
         }
     }
     
-    public Mission bestMission(LinkedList<Mission> missions)
+    public Task bestTask(LinkedList<Task> tasks)
     {
         int i = 0;
-        double[] values = new double[missions.size()];
+        double[] values = new double[tasks.size()];
         
-        for(Mission m: missions)
+        for(Task m: tasks)
         {
             values[i] = calculateSuccesValue(m);
             i++;
@@ -851,23 +851,23 @@ public class Player {
             j++;
         }
         
-        return missions.get(i);
+        return tasks.get(i);
     }
     
-    public double calculateSuccesValue(Mission m)
+    public double calculateSuccesValue(Task m)
     {
         int value = 0;
         int higher = 0;
         int lower = -1;
         if(hand.contains(m))
         {
-            value += m.getMissionCard().getValue();
+            value += m.getTaskCard().getValue();
             
             for(Card c: hand)
             {
-                if(m.getMissionCard().getSuit() == c.getSuit())
+                if(m.getTaskCard().getSuit() == c.getSuit())
                 {
-                    if(m.getMissionCard().getValue() < c.getValue())
+                    if(m.getTaskCard().getValue() < c.getValue())
                     {
                         higher++;
                     }
@@ -882,20 +882,20 @@ public class Player {
         }
         else
         {
-            value += (9-m.getMissionCard().getValue());
+            value += (9-m.getTaskCard().getValue());
             
             for(Card c: hand)
             {
-                if(m.getMissionCard().getSuit() == c.getSuit())
+                if(m.getTaskCard().getSuit() == c.getSuit())
                 {
-                    if(m.getMissionCard().getValue() < c.getValue())
+                    if(m.getTaskCard().getValue() < c.getValue())
                     {
                         higher++;
                     }
                 }
             }
             
-            value *= (0.5 + (1+higher/(10-m.getMissionCard().getValue())));
+            value *= (0.5 + (1+higher/(10-m.getTaskCard().getValue())));
             //the amount of those you have/amount of cards above it
             
         }
@@ -946,13 +946,13 @@ public class Player {
             value = 9 - c.getCard().getValue();
         }
         
-        LinkedList<Mission> missions = game.getMissionOverview();
+        LinkedList<Task> tasks = game.getTaskOverview();
         
-        for(Mission m: missions)
+        for(Task m: tasks)
         {
-            if(m.getMissionCard().getSuit() == c.getCard().getSuit())
+            if(m.getTaskCard().getSuit() == c.getCard().getSuit())
             {
-                value *= (1 + 1/missions.size());
+                value *= (1 + 1/tasks.size());
             }
         }
         
@@ -1093,9 +1093,9 @@ public class Player {
         cardPlayed = hand.remove(hand.indexOf(c));
     }
     
-    public void forceChooseMission(Mission m)
+    public void forceChooseTask(Task m)
     {
-        personalMissions.add(m);
+        personalTasks.add(m);
         m.setPlayerNum(playNum);
     }
     
@@ -1134,19 +1134,19 @@ public class Player {
         
     }
     
-    public LinkedList<Mission> chooseMission(LinkedList<Mission> missions, IOInterface f, Player[] players)
+    public LinkedList<Task> chooseTask(LinkedList<Task> tasks, IOInterface f, Player[] players)
     {
-        Mission m = controller.chooseMission(missions, players, playNum, game);
-        personalMissions.add(m);
-        game.getHistory().missionUpdate(m, playNum);
-        //System.out.println("Now we assign the mission " + m + " to player " + (playNum+1));
+        Task m = controller.chooseTask(tasks, players, playNum, game);
+        personalTasks.add(m);
+        game.getHistory().taskUpdate(m, playNum);
+        //System.out.println("Now we assign the task " + m + " to player " + (playNum+1));
         m.setPlayerNum(playNum);
         if(feedback)
         {
-            f.missionSelected(m, playNum);
+            f.taskSelected(m, playNum);
         }
         
-        return missions;
+        return tasks;
     }
     
     public Card getCardPlayed()
@@ -1221,9 +1221,9 @@ public class Player {
         
     }
     
-    public LinkedList<Mission> getPersonalMissions()
+    public LinkedList<Task> getPersonalTasks()
     {
-        return personalMissions;
+        return personalTasks;
     }
     
     public double[][][] getGameInfo()
@@ -1233,7 +1233,7 @@ public class Player {
     
     public Player clonePlayer(GameController contr)
     {
-        return new Player(hand, nOfPlayers, playNum, controller.cloneController(), comm, cardPlayed, cardInfo, contr, winPile, hasCommunicated, personalMissions);
+        return new Player(hand, nOfPlayers, playNum, controller.cloneController(), comm, cardPlayed, cardInfo, contr, winPile, hasCommunicated, personalTasks);
     }
    
     

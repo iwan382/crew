@@ -145,18 +145,18 @@ public class IOInterface
         }
     }
 
-    public Mission selectMissionToPick(LinkedList<Mission> missions, LinkedList<Card> hand)
+    public Task selectTaskToPick(LinkedList<Task> tasks, LinkedList<Card> hand)
     {
-        System.out.println("Please indicate which mission you want to perform: ");
-        System.out.println("The missions you can pick are: " + missions);
+        System.out.println("Please indicate which task you want to perform: ");
+        System.out.println("The tasks you can pick are: " + tasks);
         System.out.println("You currently have: " + hand + " in your hand");
-        System.out.println("Please indicate which mission with a number corresponding to its position");
+        System.out.println("Please indicate which task with a number corresponding to its position");
         while(true)
         {
             if(scan.hasNextInt())
             {
                 int i = scan.nextInt();
-                return missions.remove(i-1);
+                return tasks.remove(i-1);
             }
             else
             {
@@ -189,30 +189,30 @@ public class IOInterface
         }
     }
     
-    public void missionSelected(Mission m, int player)
+    public void taskSelected(Task m, int player)
     {
-        System.out.println("Player " + (player+1) + " has chosen the mission: \"" + m.toString() + "\"");
+        System.out.println("Player " + (player+1) + " has chosen the task: \"" + m.toString() + "\"");
     }
     
-    public void missionSucces(Mission m, int player)
+    public void taskSucces(Task m, int player)
     {
-        System.out.println("Player " + (player+1) + " has completed the mission: \"" + m.toString() + "\"");
+        System.out.println("Player " + (player+1) + " has completed the task: \"" + m.toString() + "\"");
     }
     
-    public void missionFailed(Mission m, int player)
+    public void taskFailed(Task m, int player)
     {
-        System.out.println("Player " + (player+1) + " has not completed the mission: \"" + m.toString() + "\"");
+        System.out.println("Player " + (player+1) + " has not completed the task: \"" + m.toString() + "\"");
     }    
     
     public void result(boolean won)
     {
         if(won)
         {
-            System.out.println("This mission has been completed successfully.");
+            System.out.println("This task has been completed successfully.");
         }
         else
         {
-            System.out.println("This mission was unsuccessfull.");
+            System.out.println("This task was unsuccessfull.");
         }
     }
 }

@@ -15,10 +15,10 @@ public class History {
     LinkedList<Card> cardsPlayed = new LinkedList<Card>();
     LinkedList<Integer> playerActing = new LinkedList<Integer>();
     boolean success, finished = false;
-    LinkedList<Mission> missionsChosen = new LinkedList<Mission>();
+    LinkedList<Task> tasksChosen = new LinkedList<Task>();
     LinkedList<Integer> playerChoosing = new LinkedList<Integer>();
     Card[][] startingHands;
-    LinkedList<LinkedList<Mission>> missionDevision = new LinkedList<LinkedList<Mission>>();
+    LinkedList<LinkedList<Task>> taskDevision = new LinkedList<LinkedList<Task>>();
     LinkedList<Communication> communicationsMade = new LinkedList<Communication>();
     LinkedList<Integer> roundCommunicated = new LinkedList<Integer>();
     LinkedList<Integer> playerCommunicating = new LinkedList<Integer>();
@@ -38,7 +38,7 @@ public class History {
         }
     }
     
-    public History(LinkedList<Card> cP, LinkedList<Integer> pA, LinkedList<Mission> mC, LinkedList<Integer> pC)
+    public History(LinkedList<Card> cP, LinkedList<Integer> pA, LinkedList<Task> mC, LinkedList<Integer> pC)
     {
         for(int i = 0; i < cP.size(); i++)
         {
@@ -48,7 +48,7 @@ public class History {
         
         for(int i = 0; i < mC.size(); i++)
         {
-            missionsChosen.add(mC.get(i));
+            tasksChosen.add(mC.get(i));
             playerChoosing.add(pC.get(i));
         }
     }
@@ -66,9 +66,9 @@ public class History {
         playerActing.add(player);
     }
     
-    public void missionUpdate(Mission m, int player)
+    public void taskUpdate(Task m, int player)
     {
-        missionsChosen.add(m);
+        tasksChosen.add(m);
         playerChoosing.add(player);
     }
     
@@ -82,9 +82,9 @@ public class History {
         return playerActing;
     }
     
-    public LinkedList<Mission> getMissionsChosen()
+    public LinkedList<Task> getTasksChosen()
     {
-        return missionsChosen;
+        return tasksChosen;
     }
     
     public LinkedList<Integer> getPlayerChoosing()
@@ -158,9 +158,9 @@ public class History {
     {
         String s = "History overview: \n";
         
-        for(int i = 0; i < missionsChosen.size(); i++)
+        for(int i = 0; i < tasksChosen.size(); i++)
         {
-            s += "Player " + (playerChoosing.get(i)+1) + " chose mission " + missionsChosen.get(i) + "\n";
+            s += "Player " + (playerChoosing.get(i)+1) + " chose task " + tasksChosen.get(i) + "\n";
         }
         
         s += "-------------------------------------- \n";

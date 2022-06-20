@@ -139,11 +139,11 @@ public class Controller {
         }
     }
     
-    public Mission chooseMission(LinkedList<Mission> missions, Player[] players, int pNum, GameController contr) 
+    public Task chooseTask(LinkedList<Task> missions, Player[] players, int pNum, GameController contr) 
     {
         
         Strategy[] s;
-        Mission m = missions.get(r.nextInt(missions.size()));
+        Task m = missions.get(r.nextInt(missions.size()));
         switch(strategy)
         {
             case RANDOM: 
@@ -151,7 +151,7 @@ public class Controller {
                 return m;
            
             case PLAYER: 
-                m = ioManager.selectMissionToPick(missions, players[pNum].getHand());
+                m = ioManager.selectTaskToPick(missions, players[pNum].getHand());
                 missions.remove(m);
                 return m;
             
@@ -180,60 +180,60 @@ public class Controller {
                 return m;
                 
             case SETLIST:
-                m = game.getNextMission();
+                m = game.getNextTask();
                 missions.remove(m);
                 if(missions.contains(m))
                 {
                     return m;
                 }
-                else if(m.equals(new Mission(new Card(Color.BLACK, 7), MissionOrder.NONE)))
+                else if(m.equals(new Task(new Card(Color.BLACK, 7), TaskOrder.NONE)))
                 {
                     return missions.get(r.nextInt(missions.size()));
                 }
                 else
                 {
-                    return new Mission(new Card(Color.BLACK, 9), MissionOrder.NONE);
+                    return new Task(new Card(Color.BLACK, 9), TaskOrder.NONE);
                 }
                 
             case SETLISTNOTDUMB:
-                m = game.getNextMission();
+                m = game.getNextTask();
                 missions.remove(m);
                 if(false) //bad choice plus another option is available
                 {
-                    return new Mission(new Card(Color.BLACK, 9), MissionOrder.NONE);
+                    return new Task(new Card(Color.BLACK, 9), TaskOrder.NONE);
                 }
                 if(missions.contains(m))
                 {
                     return m;
                 }
-                else if(m.equals(new Mission(new Card(Color.BLACK, 7), MissionOrder.NONE)))
+                else if(m.equals(new Task(new Card(Color.BLACK, 7), TaskOrder.NONE)))
                 {
                     return missions.get(r.nextInt(missions.size()));
                 }
                 else
                 {
-                    return new Mission(new Card(Color.BLACK, 9), MissionOrder.NONE);
+                    return new Task(new Card(Color.BLACK, 9), TaskOrder.NONE);
                 }
                 
             case SETLISTSMART:
-                m = game.getNextMission();
-                if(m.equals(players[pNum].bestMission(missions))) //not the best choice for the player
+                m = game.getNextTask();
+                if(m.equals(players[pNum].bestTask(missions))) //not the best choice for the player
                 {
                     missions.remove(m);
-                    return new Mission(new Card(Color.BLACK, 9), MissionOrder.NONE);
+                    return new Task(new Card(Color.BLACK, 9), TaskOrder.NONE);
                 }
                 missions.remove(m);
                 if(missions.contains(m))
                 {
                     return m;
                 }
-                else if(m.equals(new Mission(new Card(Color.BLACK, 7), MissionOrder.NONE)))
+                else if(m.equals(new Task(new Card(Color.BLACK, 7), TaskOrder.NONE)))
                 {
                     return missions.get(r.nextInt(missions.size()));
                 }
                 else
                 {
-                    return new Mission(new Card(Color.BLACK, 9), MissionOrder.NONE);
+                    return new Task(new Card(Color.BLACK, 9), TaskOrder.NONE);
                 }
                                 
             case NOTCOMPLETELYINCOMPETENT:
@@ -246,7 +246,7 @@ public class Controller {
                 return m;
             
             case SMART:
-                m = players[pNum].bestMission(missions);
+                m = players[pNum].bestTask(missions);
                 missions.remove(m);
                 return m;
                 

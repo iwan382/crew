@@ -96,7 +96,7 @@ public class ExcelExport
         }
         
         
-        LinkedList<Mission> missions = h.getMissionsChosen();
+        LinkedList<Task> missions = h.getTasksChosen();
         LinkedList<Integer> playerChoice = h.getPlayerChoosing();
         
         for(int i = 0; i < missions.size(); i++)
@@ -106,7 +106,7 @@ public class ExcelExport
             {
                 row = page.createRow(1+nOfPlayers+playerChoice.get(i)+(offSet*sizeOfData));
                 Cell c = row.createCell(0);
-                c.setCellValue("Missions of player " + (playerChoice.get(i)+1));
+                c.setCellValue("Tasks of player " + (playerChoice.get(i)+1));
             }
             
             int collumNum = 0;

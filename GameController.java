@@ -16,7 +16,7 @@ import java.util.*;
 public class GameController {
     
     private LinkedList<Card> deck = new LinkedList();
-    private LinkedList<Mission> missionOverview = new LinkedList();
+    private LinkedList<Task> taskOverview = new LinkedList();
     private Card[][] startingHands;
     private Player[] players;
     private Random r = new Random();
@@ -28,19 +28,19 @@ public class GameController {
     private boolean feedback = true;
     private History history = new History();
     private LinkedList<Card> preSelectedMoves = new LinkedList();
-    private LinkedList<Mission> preSelectedMissions = new LinkedList();
+    private LinkedList<Task> preSelectedTasks = new LinkedList();
     
     private Strategy[] strats;
     private int mNum;
     
-    public GameController(int nPlayers, Player[] newPlayers, int round, Player lead, int player, boolean b, LinkedList<Mission> overview, History h)
+    public GameController(int nPlayers, Player[] newPlayers, int round, Player lead, int player, boolean b, LinkedList<Task> overview, History h)
     {
         players = newPlayers;
         for(Player p: players)
         {
             p.setGame(this);
         }
-        history = new History(h.getCardsPlayed(), h.getPlayerActing(), h.getMissionsChosen(), h.getPlayerChoosing());
+        history = new History(h.getCardsPlayed(), h.getPlayerActing(), h.getTasksChosen(), h.getPlayerChoosing());
         /*
         System.out.println("The first player is: " + players[0]);
         for(int i = 0; i < nPlayers; i++)
@@ -52,7 +52,7 @@ public class GameController {
         }
         */
         deck = new LinkedList();
-        missionOverview = overview;
+        taskOverview = overview;
         r = new Random();
         this.round = round;
         leadPlayer = lead;
@@ -137,7 +137,7 @@ public class GameController {
     No output will be given during the time the game runs.
     
     */
-    public double calculateSucces(int m)
+    public double runGame(int m)
     {
         mNum = m;
         feedback = false;
@@ -159,7 +159,7 @@ public class GameController {
     public boolean historyCheck(Strategy[] s)   
     {
         History h = simulateGameStart(preSelectedMoves.size()/players.length-1, s);
-        if(h.getMissionsChosen().contains(new Mission(new Card(Color.BLACK, 9), MissionOrder.NONE)))
+        if(h.getTasksChosen().contains(new Task(new Card(Color.BLACK, 9), TaskOrder.NONE)))
         {
             return false;
         }
@@ -168,20 +168,20 @@ public class GameController {
     }
     
     /*
-    Simulate a game including the deviding the missions, then return a History object containing the relevant information about it.
+    Simulate a game including the deviding the tasks, then return a History object containing the relevant information about it.
     
     */
     public History simulateGameStart(int maxRounds, Strategy[] strats)
     {
         reassignStrategy(strats);
-        simulateDevideNormally(missionOverview, strats);
+        simulateDevideNormally(taskOverview, strats);
         gameStart(maxRounds);
         results();
         return history;
     }
     
     /*
-    Ensure that the missions associated with the wanted mission are divided properly
+    Ensure that the tasks associated with the wanted mission are divided properly
     
     */
     public void gameSetUp()
@@ -240,17 +240,17 @@ public class GameController {
     }
     
     /*
-    Make player pNum add the mission mission.
+    Make player pNum add the Task task.
     Then update which player has to take their turn.
     
     */
-    public void chooseMission(int pNum, Mission mission)
+    public void chooseTask(int pNum, Task task)
     {
-        players[pNum].forceChooseMission(mission);
-        //System.out.println("Assign the mission " + mission.toString() + " to player " + (pNum+1));
-        missionOverview.get(missionOverview.indexOf(mission)).setPlayerNum(pNum);
-        //System.out.println("Now the mission is assigned to player " + (mission.getPlayerNum()+1));
-        history.missionUpdate(mission, player);
+        players[pNum].forceChooseTask(task);
+        //System.out.println("Assign the task " + task.toString() + " to player " + (pNum+1));
+        taskOverview.get(taskOverview.indexOf(task)).setPlayerNum(pNum);
+        //System.out.println("Now the task is assigned to player " + (task.getPlayerNum()+1));
+        history.taskUpdate(task, player);
         player++;
         player %= players.length;
     }
@@ -295,9 +295,9 @@ public class GameController {
             gameFinished = communication(maxRounds);
             //System.out.println("We finish a communication phase");
             boolean won = true, lost = false;
-            for(Mission m: missionOverview)
+            for(Task m: taskOverview)
             {
-                won &= m.MissionSuccess(players);
+                won &= m.TaskSuccess(players);
                 lost |= m.PrematureFailure(players);
             }
             gameFinished |= won;
@@ -320,7 +320,7 @@ public class GameController {
         Start with performing a communication phase then loop a trick phase followed by a communication phase
         until either the communication phase function signals that the game has come to an end,
         or you determine that the result of the game is already known
-        (if (at least) one mission cannot be completed anymore, or all missions already have been completed)
+        (if (at least) one task cannot be completed anymore, or all tasks already have been completed)
     */
     public void gameStart(int maxRounds)
     {
@@ -348,9 +348,9 @@ public class GameController {
             gameFinished = communication(maxRounds);
             //System.out.println("We finish a communication phase");
             boolean won = true, lost = false;
-            for(Mission m: missionOverview)
+            for(Task m: taskOverview)
             {
-                won &= m.MissionSuccess(players);
+                won &= m.TaskSuccess(players);
                 lost |= m.PrematureFailure(players);
             }
             gameFinished |= won;
@@ -359,24 +359,24 @@ public class GameController {
     }
 
     /*
-        Return true if and only if all of the missions have been completed succesfully.
+        Return true if and only if all of the tasks have been completed succesfully.
         
     */
     public boolean results()
     {
         boolean gameWon = true;
-        boolean missionSucces;
-        for(Mission m: missionOverview)
+        boolean taskSucces;
+        for(Task m: taskOverview)
         {
-            missionSucces = m.MissionSuccess(players);
-            gameWon &= missionSucces;
-            if(missionSucces && feedback)
+            taskSucces = m.TaskSuccess(players);
+            gameWon &= taskSucces;
+            if(taskSucces && feedback)
             {
-                ioManager.missionSucces(m, m.getPlayerNum());
+                ioManager.taskSucces(m, m.getPlayerNum());
             }
             else if(feedback)
             {
-                ioManager.missionFailed(m, m.getPlayerNum());
+                ioManager.taskFailed(m, m.getPlayerNum());
             }
             
         }
@@ -388,7 +388,7 @@ public class GameController {
         //System.out.println(history.toString());
         
         
-        if(missionOverview == null)
+        if(taskOverview == null)
         {
             System.out.println("oi");
         }
@@ -611,9 +611,9 @@ public class GameController {
             Color leadColor = leadPlayer.getCardPlayed().getSuit();
             for(Card c: cardsOnTheTable)
             {
-                if(isInAMission(c))
+                if(isInATask(c))
                 {
-                    if(playerHasMission(c, players[playerNumber]))
+                    if(playerHasTask(c, players[playerNumber]))
                     {
                         return !winningCard(leadColor, move);
                     }
@@ -626,7 +626,7 @@ public class GameController {
             
             for(Player p: players)
             {
-                if(playerHasMission(move, p))
+                if(playerHasTask(move, p))
                 {
                     if(p.getCardPlayed() != null)
                     {
@@ -732,11 +732,11 @@ public class GameController {
         return true;
     }
     
-    public boolean isInAMission(Card c)
+    public boolean isInATask(Card c)
     {
         for(Player p: players)
         {
-            if(playerHasMission(c,p))
+            if(playerHasTask(c,p))
             {
                 return true;
             }
@@ -744,11 +744,11 @@ public class GameController {
         return false;
     }
     
-    public boolean playerHasMission(Card c, Player p)
+    public boolean playerHasTask(Card c, Player p)
     {
-        for(Mission m: p.getPersonalMissions())
+        for(Task m: p.getPersonalTasks())
         {
-            if(m.getMissionCard().equals(c))
+            if(m.getTaskCard().equals(c))
             {
                 return true;
             }
@@ -756,78 +756,76 @@ public class GameController {
         return false;
     }
     
-    public void assignMissions(int mission, LinkedList<Card> missionCards)
+    public void assignMissions(int mission, LinkedList<Card> taskCards)
     {
-        LinkedList<Mission> missions = new LinkedList();
+        LinkedList<Task> tasks = new LinkedList();
         int conditions[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
         switch(mission)
         {
             case 1: 
-                missions.add(new Mission(deck.remove(r.nextInt(36)), MissionOrder.NONE));
-                devideNormally(missions);
+                tasks.add(new Task(deck.remove(r.nextInt(36)), TaskOrder.NONE));
+                devideNormally(tasks);
                 break;
             case 2:
-                missions = createMissions(missionCards, 2,  conditions);
-                //missions.add(new Mission(deck.remove(r.nextInt(36)), MissionOrder.NONE));
-                //missions.add(new Mission(deck.remove(r.nextInt(35)), MissionOrder.NONE));
-                devideNormally(missions);
+                tasks = createTasks(taskCards, 2, conditions);
+                devideNormally(tasks);
                 break;
             case 4:
-                missions = createMissions(missionCards, 3,  conditions);
-                devideNormally(missions);
+                tasks = createTasks(taskCards, 3, conditions);
+                devideNormally(tasks);
                 break;
             case 10:
-                missions = createMissions(missionCards, 4,  conditions);
-                devideNormally(missions);
+                tasks = createTasks(taskCards, 4, conditions);
+                devideNormally(tasks);
                 break;
             case 42:
-                missions = createMissions(missionCards, 9,  conditions);
-                devideNormally(missions);
+                tasks = createTasks(taskCards, 9, conditions);
+                devideNormally(tasks);
                 break;
             case 47:
-                missions = createMissions(missionCards, 10,  conditions);
-                devideNormally(missions);
+                tasks = createTasks(taskCards, 10, conditions);
+                devideNormally(tasks);
                 break;
             default: 
                 break;
         }
     }
     
-    public LinkedList<Mission> createMissions(LinkedList<Card> cards, int n, int[] conditions)
+    public LinkedList<Task> createTasks(LinkedList<Card> cards, int n, int[] conditions)
     {
-        LinkedList<Mission> missions = new LinkedList<>();
+        LinkedList<Task> tasks = new LinkedList<>();
         for(int i = 0; i < n; i++)
         {
-            missions.add(new Mission(deck.remove(r.nextInt(36-i)), MissionOrder.values()[conditions[i]]));
+            tasks.add(new Task(deck.remove(r.nextInt(36-i)), TaskOrder.values()[conditions[i]]));
         }
-        return missions;
+        return tasks;
     }
 
-    public void devideNormally(LinkedList<Mission> missions) 
+    public void devideNormally(LinkedList<Task> tasks) 
     {
-        missionOverview = new LinkedList();
-        missionOverview.addAll(missions);
-        while(!missions.isEmpty())
+        taskOverview = new LinkedList();
+        taskOverview.addAll(tasks);
+        while(!tasks.isEmpty())
         {
-            missions = players[player].chooseMission(missions, ioManager, players);
+            tasks = players[player].chooseTask(tasks, ioManager, players);
             player++;
             player = player % players.length;
         }
     }
     
-    public void simulateDevideNormally(LinkedList<Mission> missions, Strategy[] strats)
+    public void simulateDevideNormally(LinkedList<Task> tasks, Strategy[] strats)
     {
-        LinkedList<Mission> copyMissions = new LinkedList();
+        LinkedList<Task> copyTasks = new LinkedList();
         
-        for(Mission m: missions)
+        for(Task m: tasks)
         {
-            copyMissions.add(missionOverview.get(missionOverview.indexOf(m)));
+            copyTasks.add(taskOverview.get(taskOverview.indexOf(m)));
         }        
         this.reassignStrategy(strats);
-        while(!missions.isEmpty())
+        while(!tasks.isEmpty())
         {
             //System.out.println("The previous number should not be 0");
-            missions = players[player].chooseMission(copyMissions, ioManager, players);
+            tasks = players[player].chooseTask(copyTasks, ioManager, players);
             player++;
             player = player % players.length;
         }
@@ -847,25 +845,25 @@ public class GameController {
             //System.out.println(newPlayers[i]);//debug info
         }
         //System.out.println(this);//debug info
-        LinkedList<Mission> missionCopy = new LinkedList();
-        for(int i = 0; i < missionOverview.size(); i++)
+        LinkedList<Task> taskCopy = new LinkedList();
+        for(int i = 0; i < taskOverview.size(); i++)
         {
-            missionCopy.add(missionOverview.get(i).cloneMission());
+            taskCopy.add(taskOverview.get(i).cloneTask());
         }
         
         
-        return new GameController(players.length, newPlayers, round, leadPlayer, player, trickPhase, missionCopy, history);
+        return new GameController(players.length, newPlayers, round, leadPlayer, player, trickPhase, taskCopy, history);
     }
     
-    public Mission getNextMission()
+    public Task getNextTask()
     {
-        if(preSelectedMissions.isEmpty())
+        if(preSelectedTasks.isEmpty())
         {
-            return new Mission(new Card(Color.BLACK, 7), MissionOrder.NONE);
+            return new Task(new Card(Color.BLACK, 7), TaskOrder.NONE);
         }
         else
         {
-            return preSelectedMissions.remove();
+            return preSelectedTasks.remove();
         }
     }
     
@@ -881,9 +879,9 @@ public class GameController {
         }
     }
     
-    public LinkedList<Mission> getMissionOverview()
+    public LinkedList<Task> getTaskOverview()
     {
-        return missionOverview;
+        return taskOverview;
     }
     
     public int getPlayer()
@@ -915,9 +913,9 @@ public class GameController {
         }
     }
     
-    public void setPreSelectedMissions(LinkedList<Mission> missions)
+    public void setPreSelectedTasks(LinkedList<Task> tasks)
     {
-        this.preSelectedMissions = missions;
+        this.preSelectedTasks = tasks;
     }
     
     public void setPreSelectedMoves(LinkedList<Card> moves)

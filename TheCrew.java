@@ -35,7 +35,7 @@ public class TheCrew {
             {   
                 startTime = System.currentTimeMillis(); 
                 game = new GameController(players, false, s);
-                successes += game.calculateSucces(mission);
+                successes += game.runGame(mission);
                 endTime = System.currentTimeMillis();
                 long gameTime = endTime-startTime;
                 History h = game.getHistory();
