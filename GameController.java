@@ -764,27 +764,27 @@ public class GameController {
         {
             case 1: 
                 tasks.add(new Task(deck.remove(r.nextInt(36)), TaskOrder.NONE));
-                devideNormally(tasks);
+                divideNormally(tasks);
                 break;
             case 2:
                 tasks = createTasks(taskCards, 2, conditions);
-                devideNormally(tasks);
+                divideNormally(tasks);
                 break;
             case 4:
                 tasks = createTasks(taskCards, 3, conditions);
-                devideNormally(tasks);
+                divideNormally(tasks);
                 break;
             case 10:
                 tasks = createTasks(taskCards, 4, conditions);
-                devideNormally(tasks);
+                divideNormally(tasks);
                 break;
             case 42:
                 tasks = createTasks(taskCards, 9, conditions);
-                devideNormally(tasks);
+                divideNormally(tasks);
                 break;
             case 47:
                 tasks = createTasks(taskCards, 10, conditions);
-                devideNormally(tasks);
+                divideNormally(tasks);
                 break;
             default: 
                 break;
@@ -801,7 +801,7 @@ public class GameController {
         return tasks;
     }
 
-    public void devideNormally(LinkedList<Task> tasks) 
+    public void divideNormally(LinkedList<Task> tasks) 
     {
         taskOverview = new LinkedList();
         taskOverview.addAll(tasks);

@@ -29,7 +29,8 @@ public class TheCrew {
         if(Io.manyGames())
         {
             int mission = Io.selectMission();
-            //ExcelExport export = new ExcelExport("3PlayersBULKSIMHONESTmis42");
+            String sheet = Io.sheetName();
+            ExcelExport export = new ExcelExport(sheet);
             Double successes = 0.00, tries = (double) Io.howManyGames(); //Strategy.RANDOM
             for(int d = 0; d < tries; d++)
             {   
@@ -40,7 +41,7 @@ public class TheCrew {
                 long gameTime = endTime-startTime;
                 History h = game.getHistory();
                 h.setTimeTaken(gameTime);
-                //export.exportHistory(h, d);
+                export.exportHistory(h, d);
                 if(d % (tries/100) == 0)
                 {
                     System.out.println(d);

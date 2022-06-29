@@ -48,6 +48,19 @@ public class IOInterface
         }
     }
     
+    public String sheetName() 
+    {
+        System.out.println("Please indicate how you want to name the sheet the data is written to.");
+        System.out.println("(Ensure that it does not exist already)");
+        while(true)
+        {
+            if(scan.hasNext())
+            {
+                return scan.next();
+            }
+        }
+    }
+    
     public void cardPlayed(int player, Card card)
     {
         System.out.println("Player " + (player+1) + ", played a " + card.toString());
@@ -215,4 +228,6 @@ public class IOInterface
             System.out.println("This task was unsuccessfull.");
         }
     }
+
+    
 }
