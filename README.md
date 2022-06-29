@@ -1,6 +1,6 @@
 # crew
 
-We use the apache library too write data to an excel file. 
+We use the apache library to write data to an excel file. 
 
 If you do not have that library installed it can be found here: https://poi.apache.org/
 
